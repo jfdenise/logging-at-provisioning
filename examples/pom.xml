@@ -55,6 +55,7 @@
 
   <modules>
     <module>app</module>
+    <module>dependencies</module>
     <module>translations</module>
   </modules>
 </project>

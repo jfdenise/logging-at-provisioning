@@ -6,7 +6,7 @@ import org.jboss.logging.Messages;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
-
+import org.example.logging.dependencies.MyException;
 /**
  * Example @MessageBundle interface.
  *

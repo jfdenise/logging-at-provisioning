@@ -11,16 +11,11 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>logging-example</artifactId>
+    <artifactId>logging-example-dependencies</artifactId>
     <packaging>jar</packaging>
-    <name>App example</name>
+    <name>Dependencies of the app</name>
 
     <dependencies>
-      <dependency>
-            <groupId>org.example</groupId>
-            <artifactId>logging-example-dependencies</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
@@ -66,7 +61,6 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>org/example/logging/dependencies/*</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

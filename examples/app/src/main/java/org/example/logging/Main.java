@@ -1,6 +1,7 @@
 package org.example.logging;
 
 import org.jboss.logging.Logger;
+import org.example.logging.dependencies.MyException;
 
 /**
  * Entry point that exercises the generated logger and bundle classes.

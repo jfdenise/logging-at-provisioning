@@ -27,3 +27,4 @@ replay_pid*
 /examples/translations/target/
 generated-classes
 generated-sources
+/examples/dependencies/target/
