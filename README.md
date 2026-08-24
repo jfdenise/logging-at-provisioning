@@ -19,9 +19,9 @@ That mimics what we should do when splitting src from translation files.
 
 * Build the generator and example
 
-** `cd generator; mvn clean install;cd ..`
+`cd generator; mvn clean install;cd ..`
 
-** `cd examples; mvn clean install;cd ..`
+`cd examples; mvn clean install;cd ..`
 
 * Generate the logging src and compile classes using the generator Command Line:
 
