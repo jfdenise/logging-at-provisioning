@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.example</groupId>
+        <artifactId>logging-examples-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>logging-example-translations</artifactId>
+    <packaging>jar</packaging>
+    <name>jboss-logging-tools Example — Translations</name>
+
+    <description>
+        Locale-specific .properties translation files for the logging-example interfaces.
+        This JAR contains no Java sources — only .properties files co-located at the same
+        package path as the source interfaces.
+
+        At provisioning time, pass this JAR alongside the core JAR so the runner can
+        discover the translation files and generate the locale-specific _$logger_fr classes:
+
+            java -jar logging-provisioning-time-VERSION-runner.jar \
+                --output /tmp/out \
+                ../examples/target/logging-example-1.0.0-SNAPSHOT.jar \
+                target/logging-example-translations-1.0.0-SNAPSHOT.jar
+    </description>
+
+    <!--
+        No dependencies — the translation JAR is pure resources.
+        maven-jar-plugin bundles everything under src/main/resources into the JAR.
+    -->
+    <build>
+        <plugins>
+            <!--
+                Skip compilation (there are no .java sources) and suppress the
+                "no sources" warning.
+            -->
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <skipMain>true</skipMain>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

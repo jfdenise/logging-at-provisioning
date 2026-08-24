@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.jboss.logging.tools</groupId>
+    <artifactId>provisioning-generator</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>Provisioning-Time Class Generator</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>11</maven.compiler.release>
+        <version.jboss-logging-tools>3.0.4.Final</version.jboss-logging-tools>
+        <version.jboss-logging>3.6.1.Final</version.jboss-logging>
+        <version.jboss-logmanager>3.1.2.Final</version.jboss-logmanager>
+        <version.jdeparser>2.0.3.Final</version.jdeparser>
+        <!-- ASM — use the version shipped in the WildFly ecosystem -->
+        <version.asm>9.7.1</version.asm>
+        <!-- Test dependencies -->
+        <version.junit>5.11.4</version.junit>
+    </properties>
+
+    <dependencies>
+        <!-- ── Phase 1: bytecode scanning ─────────────────────────────────── -->
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>${version.asm}</version>
+        </dependency>
+
+        <!-- ── Phase 2: JDeparser-based generators ────────────────────────── -->
+        <!--
+            The processor JAR contains ClassModel, MessageLoggerImplementor,
+            MessageBundleImplementor, MessageInterfaceFactory, etc.
+            It must be built from the sibling jboss-logging-tools checkout first:
+              cd ../jboss-logging-tools && mvn install -DskipTests
+        -->
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-processor</artifactId>
+            <version>${version.jboss-logging-tools}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-annotations</artifactId>
+            <version>${version.jboss-logging-tools}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <version>${version.jboss-logging}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.jdeparser</groupId>
+            <artifactId>jdeparser</artifactId>
+            <version>${version.jdeparser}</version>
+        </dependency>
+
+        <!-- ── Phase 3: compilation ───────────────────────────────────────── -->
+        <!--
+            javax.tools.JavaCompiler is available via ToolProvider.getSystemJavaCompiler()
+            when running on a JDK. The tools.jar / java.compiler module is provided by
+            the JDK itself; no extra Maven dependency is needed.
+        -->
+
+        <!-- ── Test ──────────────────────────────────────────────────────── -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${version.junit}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>jboss-logmanager</artifactId>
+            <version>${version.jboss-logmanager}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>11</release>
+                    <!--
+                        Disable annotation processing on this module itself so that
+                        jboss-logging-tools does not try to process its own source.
+                    -->
+                    <compilerArgs>
+                        <arg>-proc:none</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <!--
+                Fat/uber JAR: all runtime dependencies are merged into a single
+                executable JAR named logging-provisioning-time-VERSION-runner.jar.
+                Run with:
+                    java -jar target/logging-provisioning-time-VERSION-runner.jar [OPTIONS] jar...
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>shade-runner</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>runner</shadedClassifierName>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.jboss.logging.tools.provisioning.Main</mainClass>
+                                </transformer>
+                                <!-- Merge META-INF/services files (e.g. javax.annotation.processing.Processor) -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <!-- Suppress the invalid signature warning for signed JARs -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                                    <resources>
+                                        <resource>META-INF/MANIFEST.MF</resource>
+                                        <resource>META-INF/LICENSE</resource>
+                                        <resource>META-INF/LICENSE.txt</resource>
+                                        <resource>META-INF/NOTICE</resource>
+                                        <resource>META-INF/NOTICE.txt</resource>
+                                    </resources>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <!-- Strip digital signatures from bundled JARs to avoid SecurityException -->
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

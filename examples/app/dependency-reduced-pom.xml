@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <artifactId>logging-examples-parent</artifactId>
+    <groupId>org.example</groupId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>logging-example</artifactId>
+  <name>jboss-logging-tools Example — Core</name>
+  <description>@MessageLogger and @MessageBundle interfaces.  The APT processor generates
+        _$logger / _$bundle implementation classes at compile time.  The compiled
+        JAR contains only the English (root-locale) implementation classes;
+        locale-specific translations live in the sibling logging-example-translations
+        JAR and are passed as a second argument to the provisioning-time runner.
+
+        A shaded fat JAR (-runner.jar) is also produced that bundles jboss-logging
+        and jboss-logmanager so the application can be run standalone with:
+            java -jar target/logging-example-VERSION-runner.jar</description>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <id>shade-runner</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>runner</shadedClassifierName>
+              <transformers>
+                <transformer>
+                  <mainClass>org.example.logging.Main</mainClass>
+                </transformer>
+                <transformer />
+              </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging-annotations</artifactId>
+      <version>3.0.4.Final</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+</project>
