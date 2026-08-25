@@ -24,6 +24,7 @@
 
   <default-packages>
     <package name="org.wildfly.translations.ejb3"/>
+    <package name="org.wildfly.translations.server"/>
   </default-packages>
 
   <dependencies>

@@ -41,6 +41,11 @@
             <artifactId>wildfly-ejb3-translations</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.wildfly.translations</groupId>
+            <artifactId>wildfly-server-translations</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

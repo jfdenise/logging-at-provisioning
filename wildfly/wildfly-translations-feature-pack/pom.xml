@@ -93,5 +93,6 @@
         <module>common</module>
         <module>galleon-pack</module>
         <module>ejb3-translations</module>
+        <module>server-translations</module>
     </modules>
 </project>

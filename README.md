@@ -1,7 +1,10 @@
 # Logging src generation and compilation at provisioning time
 
 Attempt to move build time src generation and class compilation at provisioning time.
-For now, ejb3 all translations are covered.
+Covered translations for now:
+
+* ejb3
+* server (from wildfly core)
 
 # Build the generator
 

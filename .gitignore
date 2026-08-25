@@ -32,3 +32,4 @@ generated-sources
 /wildfly/wildfly-translations-feature-pack/ejb3-translations/target
 /wildfly/wildfly-translations-feature-pack/galleon-pack/target
 /wildfly/wildfly-translations-feature-pack/target
+/wildfly/wildfly-translations-feature-pack/server-translations/target/
