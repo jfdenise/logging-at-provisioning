@@ -2,6 +2,7 @@ package org.jboss.logging.tools.provisioning.scanner;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -14,6 +15,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.tools.provisioning.descriptor.InterfaceDescriptor;
 import org.jboss.logging.tools.provisioning.descriptor.InterfaceKind;
@@ -32,11 +34,17 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 /**
- * Phase 1: scans one or more JAR files and produces an {@link InterfaceDescriptor} for every
- * {@code @MessageLogger} or {@code @MessageBundle} interface found in the bytecode.
+ * Phase 1: scans one or more JAR files or exploded-JAR directories and produces an
+ * {@link InterfaceDescriptor} for every {@code @MessageLogger} or {@code @MessageBundle}
+ * interface found in the bytecode.
  *
  * <p>Annotations have {@code RetentionPolicy.CLASS} so they are read from class-file attributes
- * via ASM, not via reflection. The target JAR is <em>never</em> loaded into the JVM.</p>
+ * via ASM, not via reflection. The target JAR / directory is <em>never</em> loaded into the
+ * JVM class loader.</p>
+ *
+ * <p>Both JARs ({@code .jar} files) and exploded directories are accepted as inputs.
+ * The distinction is made automatically: if the {@link Path} is a regular file it is
+ * treated as a JAR; if it is a directory it is treated as an exploded JAR root.</p>
  */
 public class JarScanner {
 
@@ -67,21 +75,21 @@ public class JarScanner {
             Pattern.compile("^(.+)\\.i18n_([a-z]+(?:_[A-Z]+){0,2})\\.properties$");
 
     /**
-     * Scans all given JARs and returns one {@link InterfaceDescriptor} per discovered
-     * {@code @MessageLogger} / {@code @MessageBundle} interface.
+     * Scans all given inputs (JAR files or exploded directories) and returns one
+     * {@link InterfaceDescriptor} per discovered {@code @MessageLogger} /
+     * {@code @MessageBundle} interface.
+     *
+     * @param inputs JAR files ({@code .jar}) or exploded-JAR root directories.
      */
-    public List<InterfaceDescriptor> scan(List<Path> jars) throws IOException {
+    public List<InterfaceDescriptor> scan(List<Path> inputs) throws IOException {
         // Map binaryName → descriptor (mutable during scan)
         Map<String, InterfaceDescriptor> byName = new LinkedHashMap<>();
 
         // First pass: collect all interface descriptors from class files
-        for (Path jar : jars) {
-            try (JarFile jf = new JarFile(jar.toFile())) {
-                var entries = jf.entries();
-                while (entries.hasMoreElements()) {
-                    JarEntry entry = entries.nextElement();
-                    if (!entry.getName().endsWith(".class")) continue;
-                    try (InputStream in = jf.getInputStream(entry)) {
+        for (Path input : inputs) {
+            try (ClasspathEntry entry = ClasspathEntry.of(input)) {
+                for (String name : entry.classEntryNames()) {
+                    try (InputStream in = entry.open(name)) {
                         byte[] bytes = in.readAllBytes();
                         InterfaceDescriptor desc = tryParseInterface(bytes);
                         if (desc != null) {
@@ -93,17 +101,11 @@ public class JarScanner {
         }
 
         // Second pass: collect translation .properties files
-        for (Path jar : jars) {
-            try (JarFile jf = new JarFile(jar.toFile())) {
-                var entries = jf.entries();
-                while (entries.hasMoreElements()) {
-                    JarEntry entry = entries.nextElement();
-                    String entryName = entry.getName();
-                    if (!entryName.endsWith(".properties")) continue;
-
+        for (Path input : inputs) {
+            try (ClasspathEntry entry = ClasspathEntry.of(input)) {
+                for (String entryName : entry.propertiesEntryNames()) {
                     // Extract the "directory/SimpleName.i18n_locale" portion
                     int lastSlash = entryName.lastIndexOf('/');
-                    String dirPrefix = lastSlash < 0 ? "" : entryName.substring(0, lastSlash + 1);
                     String fileName = lastSlash < 0 ? entryName : entryName.substring(lastSlash + 1);
 
                     Matcher m = TRANSLATION_PATTERN.matcher(fileName);
@@ -113,8 +115,6 @@ public class JarScanner {
                     String localeSuffix = "_" + locale;
 
                     // Find the owning InterfaceDescriptor
-                    String candidateBinary = (dirPrefix + simpleName).replace('/', '/');
-                    // dirPrefix already has trailing slash so: dirPrefix + simpleName
                     String binaryKey = lastSlash < 0 ? simpleName
                             : entryName.substring(0, lastSlash) + "/" + simpleName;
                     InterfaceDescriptor owner = byName.get(binaryKey);
@@ -122,7 +122,7 @@ public class JarScanner {
 
                     // Parse the .properties file
                     Properties props = new Properties();
-                    try (InputStream in = jf.getInputStream(entry)) {
+                    try (InputStream in = entry.open(entryName)) {
                         props.load(in);
                     }
 
@@ -154,6 +154,111 @@ public class JarScanner {
         }
 
         return new ArrayList<>(byName.values());
+    }
+
+    // ── ClasspathEntry: uniform JAR / directory abstraction ──────────────
+
+    /**
+     * A closeable view of either a JAR file or an exploded directory.
+     * Provides uniform iteration over entry names and streamed access to their contents.
+     */
+    private abstract static class ClasspathEntry implements AutoCloseable {
+
+        /** Returns names of all {@code .class} entries (forward-slash separated). */
+        abstract List<String> classEntryNames() throws IOException;
+
+        /** Returns names of all {@code .properties} entries (forward-slash separated). */
+        abstract List<String> propertiesEntryNames() throws IOException;
+
+        /** Opens an input stream for the given entry name. */
+        abstract InputStream open(String entryName) throws IOException;
+
+        @Override
+        public void close() throws IOException {}
+
+        static ClasspathEntry of(Path path) throws IOException {
+            if (Files.isDirectory(path)) return new DirectoryEntry(path);
+            return new JarEntry(path);
+        }
+
+        // ── JAR-backed entry ──────────────────────────────────────────────
+
+        private static class JarEntry extends ClasspathEntry {
+            private final JarFile jf;
+
+            JarEntry(Path path) throws IOException {
+                this.jf = new JarFile(path.toFile());
+            }
+
+            @Override
+            public List<String> classEntryNames() {
+                List<String> result = new ArrayList<>();
+                var entries = jf.entries();
+                while (entries.hasMoreElements()) {
+                    String name = entries.nextElement().getName();
+                    if (name.endsWith(".class")) result.add(name);
+                }
+                return result;
+            }
+
+            @Override
+            public List<String> propertiesEntryNames() {
+                List<String> result = new ArrayList<>();
+                var entries = jf.entries();
+                while (entries.hasMoreElements()) {
+                    String name = entries.nextElement().getName();
+                    if (name.endsWith(".properties")) result.add(name);
+                }
+                return result;
+            }
+
+            @Override
+            public InputStream open(String entryName) throws IOException {
+                java.util.jar.JarEntry e = jf.getJarEntry(entryName);
+                if (e == null) throw new IOException("Entry not found in JAR: " + entryName);
+                return jf.getInputStream(e);
+            }
+
+            @Override
+            public void close() throws IOException {
+                jf.close();
+            }
+        }
+
+        // ── Directory-backed entry ────────────────────────────────────────
+
+        private static class DirectoryEntry extends ClasspathEntry {
+            private final Path root;
+
+            DirectoryEntry(Path root) {
+                this.root = root;
+            }
+
+            @Override
+            public List<String> classEntryNames() throws IOException {
+                return listByExtension(".class");
+            }
+
+            @Override
+            public List<String> propertiesEntryNames() throws IOException {
+                return listByExtension(".properties");
+            }
+
+            private List<String> listByExtension(String extension) throws IOException {
+                try (java.util.stream.Stream<Path> stream = Files.walk(root)) {
+                    return stream
+                            .filter(Files::isRegularFile)
+                            .filter(p -> p.toString().endsWith(extension))
+                            .map(p -> root.relativize(p).toString().replace(java.io.File.separatorChar, '/'))
+                            .collect(Collectors.toList());
+                }
+            }
+
+            @Override
+            public InputStream open(String entryName) throws IOException {
+                return Files.newInputStream(root.resolve(entryName));
+            }
+        }
     }
 
     // ── Interface parsing ─────────────────────────────────────────────────

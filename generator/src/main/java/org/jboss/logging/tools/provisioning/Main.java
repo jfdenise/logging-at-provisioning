@@ -110,10 +110,10 @@ public class Main {
                         printUsage();
                         return 1;
                     }
-                    // Positional: a JAR to scan
+                    // Positional: a JAR file or exploded-JAR directory to scan
                     Path jar = Paths.get(args[i]);
-                    if (!Files.isRegularFile(jar)) {
-                        System.err.println("[ERROR] Not a file: " + jar);
+                    if (!Files.isRegularFile(jar) && !Files.isDirectory(jar)) {
+                        System.err.println("[ERROR] Not a file or directory: " + jar);
                         return 1;
                     }
                     sourceJars.add(jar);

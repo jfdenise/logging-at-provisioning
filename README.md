@@ -1,6 +1,39 @@
 # Logging src generation and compilation at provisioning time
 
 Attempt to move build time src generation and class compilation at provisioning time.
+For now, ejb3 all translations are covered.
+
+# Build the generator
+
+`cd generator; mvn clean install;cd ..`
+
+# Build galleon-plugins
+
+Build it from `https://github.com/jfdenise/galleon-plugins/tree/log_generation`
+
+# Build WildFly
+
+Needed to depend on the galleon-plugins (and workaround a missing jboss dmr dep in ejb3 module).
+Build it from `https://github.com/jfdenise/wildfly/tree/logging-provisioning` 
+
+# Build the WildFly translations feature-pack and provision the server
+
+`cd wildfly/wildfly-translations-feature-pack; mvn clean install`
+
+# You can check the generated source files there:
+
+`ls galleon-pack/target/server/modules/system/layers/base/org/jboss/as/ejb3/main/generated-sources`
+
+# You can check the generated class files there:
+
+`ls galleon-pack/target/server/modules/system/layers/base/org/jboss/as/ejb3/main/translations`
+
+# Start the server with french local, you will see french messages for ejb3
+
+`JAVA_OPTS=-Duser.language=fr ./galleon-pack/target/server/bin/standalone.sh`
+
+
+# Simple examples to just activate the generator
 
 # examples
 

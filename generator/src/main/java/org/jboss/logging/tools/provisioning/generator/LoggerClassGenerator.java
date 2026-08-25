@@ -3,7 +3,9 @@ package org.jboss.logging.tools.provisioning.generator;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -114,6 +116,15 @@ public class LoggerClassGenerator {
             return;
         }
         System.out.println("[INFO]  Found " + descriptors.size() + " interface(s) to process.");
+
+        // ── Phase 1b: synthesize empty intermediate locale parent classes ─
+        // Mirrors TranslationClassGenerator.generateSourceFileFor() in jboss-logging-tools:
+        // when EjbLogger.i18n_pt_BR.properties exists but EjbLogger.i18n_pt.properties does
+        // not, the APT processor auto-generates an empty _pt superclass so that _pt_BR can
+        // extend it. We must do the same or the class hierarchy will be wrong.
+        for (InterfaceDescriptor descriptor : descriptors) {
+            synthesizeMissingParents(descriptor);
+        }
 
         // ── Phase 0 / Phase 2 setup: JavacTask for type resolution ────────
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -239,6 +250,108 @@ public class LoggerClassGenerator {
         } catch (Exception e) {
             return java.util.Optional.empty();
         }
+    }
+
+    /**
+     * Mirrors {@code TranslationClassGenerator.generateSourceFileFor()} in jboss-logging-tools.
+     *
+     * <p>For each {@link TranslationFileDescriptor} whose locale suffix has more than one
+     * {@code _} segment (e.g. {@code _pt_BR}, {@code _zh_CN}, {@code _en_US_POSIX}), ensures
+     * that every intermediate parent suffix ({@code _pt}, {@code _zh}, {@code _en},
+     * {@code _en_US}) is also present in {@code descriptor.translationFiles}.  If a parent
+     * suffix is missing it is added as an empty descriptor (no translated messages) so that
+     * {@link ClassModelFactory#translation} generates the parent class with only the
+     * {@code getLoggingLocale()} override, matching the APT output exactly.</p>
+     *
+     * <p>The synthesized entries are inserted immediately before the child that required them
+     * so the list remains sorted less-specific-first.</p>
+     */
+    private static void synthesizeMissingParents(InterfaceDescriptor descriptor) {
+        // Build a mutable ordered map: localeSuffix → descriptor, preserving order
+        // (list is already sorted less-specific first by JarScanner).
+        LinkedHashMap<String, TranslationFileDescriptor> byLocale = new LinkedHashMap<>();
+        for (TranslationFileDescriptor tfd : descriptor.translationFiles) {
+            byLocale.put(tfd.localeSuffix, tfd);
+        }
+
+        // Iterate in a stable order; collect insertions so we don't mutate while iterating
+        // Use a snapshot of current suffixes to drive the loop — new entries added will be
+        // processed in the next pass.
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            // Snapshot to avoid ConcurrentModificationException
+            List<String> suffixes = new ArrayList<>(byLocale.keySet());
+            for (String suffix : suffixes) {
+                String parentSuffix = parentLocaleSuffix(suffix);
+                if (parentSuffix == null) continue; // language-only, no parent needed
+                if (byLocale.containsKey(parentSuffix)) continue; // already present
+
+                // Synthesize an empty parent.
+                // Parent locale string: strip leading '_' from parentSuffix
+                String parentLocale = parentSuffix.substring(1);
+                // Parent's parent class name
+                String baseImplClass = descriptor.qualifiedName + "_$"
+                        + (descriptor.kind == org.jboss.logging.tools.provisioning.descriptor.InterfaceKind.LOGGER
+                                ? "logger" : "bundle");
+                String grandParentSuffix = parentLocaleSuffix(parentSuffix);
+                String parentParentClass = grandParentSuffix == null
+                        ? baseImplClass
+                        : descriptor.qualifiedName + "_$"
+                              + (descriptor.kind == org.jboss.logging.tools.provisioning.descriptor.InterfaceKind.LOGGER
+                                      ? "logger" : "bundle") + grandParentSuffix;
+
+                TranslationFileDescriptor synthetic = new TranslationFileDescriptor(
+                        descriptor.binaryName,
+                        parentSuffix,
+                        parentLocale,
+                        parentParentClass,
+                        Collections.emptyMap());
+
+                // Insert the new entry into the map, positioned before the child that needs it.
+                // Re-build the map with the parent inserted at the right position.
+                LinkedHashMap<String, TranslationFileDescriptor> reordered = new LinkedHashMap<>();
+                for (Map.Entry<String, TranslationFileDescriptor> e : byLocale.entrySet()) {
+                    if (e.getKey().equals(suffix)) {
+                        reordered.put(parentSuffix, synthetic); // parent before child
+                    }
+                    reordered.put(e.getKey(), e.getValue());
+                }
+                byLocale = reordered;
+
+                System.out.println("[INFO]    Synthesizing empty parent locale class for suffix '"
+                        + parentSuffix + "' (required by '" + suffix + "')");
+                changed = true; // re-scan: the new parent might itself need a grandparent
+                break; // restart loop over updated map
+            }
+        }
+
+        // Replace the descriptor's translationFiles in-place with the augmented list
+        descriptor.translationFiles.clear();
+        descriptor.translationFiles.addAll(byLocale.values());
+    }
+
+    /**
+     * Returns the parent locale suffix for a given suffix, or {@code null} if none.
+     *
+     * <p>Mirrors {@code TranslationHelper.getEnclosingTranslationFileName()}:
+     * strips the last {@code _}-delimited segment.  Returns {@code null} when the
+     * suffix has exactly one segment (language-only, e.g. {@code _fr}, {@code _pt}).</p>
+     *
+     * <ul>
+     *   <li>{@code _pt_BR}    → {@code _pt}</li>
+     *   <li>{@code _zh_CN}    → {@code _zh}</li>
+     *   <li>{@code _en_US_POSIX} → {@code _en_US}</li>
+     *   <li>{@code _fr}       → {@code null} (no parent)</li>
+     * </ul>
+     */
+    private static String parentLocaleSuffix(String localeSuffix) {
+        // localeSuffix is like "_pt_BR": starts with '_', may have more '_' inside.
+        // Count underscores: "_fr" has 1, "_pt_BR" has 2, "_en_US_POSIX" has 3.
+        int firstUnderscore = localeSuffix.indexOf('_');                  // always 0
+        int lastUnderscore  = localeSuffix.lastIndexOf('_');
+        if (firstUnderscore == lastUnderscore) return null; // language-only, no parent
+        return localeSuffix.substring(0, lastUnderscore);
     }
 
     /**

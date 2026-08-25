@@ -28,3 +28,7 @@ replay_pid*
 generated-classes
 generated-sources
 /examples/dependencies/target/
+/wildfly/wildfly-translations-feature-pack/common/target
+/wildfly/wildfly-translations-feature-pack/ejb3-translations/target
+/wildfly/wildfly-translations-feature-pack/galleon-pack/target
+/wildfly/wildfly-translations-feature-pack/target
