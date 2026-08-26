@@ -25,11 +25,102 @@
   <default-packages>
     <package name="org.wildfly.translations.ejb3"/>
     <package name="org.wildfly.translations.server"/>
+    <package name="org.wildfly.translations.bootable-jar-runtime"/>
+    <package name="org.wildfly.translations.cli"/>
+    <package name="org.wildfly.translations.controller-client"/>
+    <package name="org.wildfly.translations.controller"/>
+    <package name="org.wildfly.translations.core-management-subsystem"/>
+    <package name="org.wildfly.translations.deployment-repository"/>
+    <package name="org.wildfly.translations.deployment-scanner"/>
+    <package name="org.wildfly.translations.discovery"/>
+    <package name="org.wildfly.translations.domain-http-interface"/>
+    <package name="org.wildfly.translations.domain-management"/>
+    <package name="org.wildfly.translations.elytron-tool-wrapper"/>
+    <package name="org.wildfly.translations.elytron"/>
+    <package name="org.wildfly.translations.embedded"/>
+    <package name="org.wildfly.translations.host-controller"/>
+    <package name="org.wildfly.translations.installation-manager"/>
+    <package name="org.wildfly.translations.io-subsystem"/>
+    <package name="org.wildfly.translations.jmx"/>
+    <package name="org.wildfly.translations.logging"/>
+    <package name="org.wildfly.translations.management-client-content"/>
+    <package name="org.wildfly.translations.network"/>
+    <package name="org.wildfly.translations.patching"/>
+    <package name="org.wildfly.translations.platform-mbean"/>
+    <package name="org.wildfly.translations.process-controller"/>
+    <package name="org.wildfly.translations.protocol"/>
+    <package name="org.wildfly.translations.remoting-subsystem"/>
+    <package name="org.wildfly.translations.request-controller"/>
+    <package name="org.wildfly.translations.security-manager"/>
+    <package name="org.wildfly.translations.threads"/>
+    <package name="org.wildfly.translations.appclient"/>
+    <package name="org.wildfly.translations.batch-jberet"/>
+    <package name="org.wildfly.translations.bean-validation"/>
+    <package name="org.wildfly.translations.clustering-common"/>
+    <package name="org.wildfly.translations.clustering-ejb-infinispan"/>
+    <package name="org.wildfly.translations.clustering-infinispan-extension"/>
+    <package name="org.wildfly.translations.clustering-jgroups-extension"/>
+    <package name="org.wildfly.translations.clustering-singleton-extension"/>
+    <package name="org.wildfly.translations.clustering-singleton-server"/>
+    <package name="org.wildfly.translations.clustering-web-undertow"/>
+    <package name="org.wildfly.translations.connector"/>
+    <package name="org.wildfly.translations.datasources-agroal"/>
+    <package name="org.wildfly.translations.ee"/>
+    <package name="org.wildfly.translations.elytron-oidc-client"/>
+    <package name="org.wildfly.translations.expansion-pack"/>
+    <package name="org.wildfly.translations.health"/>
+    <package name="org.wildfly.translations.iiop-openjdk"/>
+    <package name="org.wildfly.translations.insights"/>
+    <package name="org.wildfly.translations.jaxrs"/>
+    <package name="org.wildfly.translations.jdr"/>
+    <package name="org.wildfly.translations.jpa-hibernate6"/>
+    <package name="org.wildfly.translations.jpa-hibernatesearch"/>
+    <package name="org.wildfly.translations.jpa-spi"/>
+    <package name="org.wildfly.translations.jpa-subsystem"/>
+    <package name="org.wildfly.translations.jsf-subsystem"/>
+    <package name="org.wildfly.translations.legacy-keycloak"/>
+    <package name="org.wildfly.translations.legacy-opentracing-extension"/>
+    <package name="org.wildfly.translations.mail"/>
+    <package name="org.wildfly.translations.messaging-activemq-injection"/>
+    <package name="org.wildfly.translations.messaging-activemq-subsystem"/>
+    <package name="org.wildfly.translations.metrics"/>
+    <package name="org.wildfly.translations.microprofile-config-smallrye"/>
+    <package name="org.wildfly.translations.microprofile-fault-tolerance-smallrye-extension"/>
+    <package name="org.wildfly.translations.microprofile-health-smallrye"/>
+    <package name="org.wildfly.translations.microprofile-jwt-smallrye"/>
+    <package name="org.wildfly.translations.microprofile-lra-coordinator"/>
+    <package name="org.wildfly.translations.microprofile-lra-participant"/>
+    <package name="org.wildfly.translations.microprofile-metrics-smallrye"/>
+    <package name="org.wildfly.translations.microprofile-openapi-smallrye"/>
+    <package name="org.wildfly.translations.microprofile-reactive-messaging-smallrye-amqp"/>
+    <package name="org.wildfly.translations.microprofile-reactive-messaging-smallrye-common"/>
+    <package name="org.wildfly.translations.microprofile-reactive-messaging-smallrye-config"/>
+    <package name="org.wildfly.translations.microprofile-reactive-messaging-smallrye-extension"/>
+    <package name="org.wildfly.translations.microprofile-reactive-messaging-smallrye-kafka"/>
+    <package name="org.wildfly.translations.microprofile-reactive-streams-operators-smallrye-cdi-provider"/>
+    <package name="org.wildfly.translations.microprofile-reactive-streams-operators-smallrye-extension"/>
+    <package name="org.wildfly.translations.microprofile-telemetry-smallrye-extension"/>
+    <package name="org.wildfly.translations.mod-cluster-extension"/>
+    <package name="org.wildfly.translations.naming"/>
+    <package name="org.wildfly.translations.observability-micrometer"/>
+    <package name="org.wildfly.translations.observability-opentelemetry"/>
+    <package name="org.wildfly.translations.picketlink"/>
+    <package name="org.wildfly.translations.pojo"/>
+    <package name="org.wildfly.translations.rts"/>
+    <package name="org.wildfly.translations.sar"/>
+    <package name="org.wildfly.translations.security-subsystem"/>
+    <package name="org.wildfly.translations.system-jmx"/>
+    <package name="org.wildfly.translations.transactions"/>
+    <package name="org.wildfly.translations.undertow"/>
+    <package name="org.wildfly.translations.webservices-server-integration"/>
+    <package name="org.wildfly.translations.weld-common"/>
+    <package name="org.wildfly.translations.weld-ejb"/>
+    <package name="org.wildfly.translations.xts"/>
   </default-packages>
 
   <dependencies>
-    <dependency group-id="org.wildfly" artifact-id="wildfly-ee-galleon-pack" allowedFamily="wildfly:jakarta-ee-10+">
-      <name>org.wildfly:wildfly-ee-galleon-pack</name>
+    <dependency group-id="org.wildfly" artifact-id="wildfly-galleon-pack">
+      <name>org.wildfly:wildfly-galleon-pack</name>
       <packages inherit="true"/>
       <default-configs inherit="false"/>
     </dependency>

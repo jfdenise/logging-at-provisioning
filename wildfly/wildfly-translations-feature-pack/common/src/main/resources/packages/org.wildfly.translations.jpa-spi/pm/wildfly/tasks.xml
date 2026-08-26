@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:3.3">
+    <generate-logging artifact="org.wildfly.translations:wildfly-jpa-spi-translations" to-location="modules/system/layers/base/org/jboss/as/jpa/spi/main/" >
+    </generate-logging>
+</tasks>

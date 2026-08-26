@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+
+<package-spec xmlns="urn:jboss:galleon:package:2.0" name="org.wildfly.translations.system-jmx">
+      <dependencies>
+        <package name="org.jboss.as.system-jmx"/>
+    </dependencies>
+</package-spec>

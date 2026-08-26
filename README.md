@@ -1,10 +1,13 @@
 # Logging src generation and compilation at provisioning time
 
 Attempt to move build time src generation and class compilation at provisioning time.
-Covered translations for now:
+Covered all 8.1 translations.
 
-* ejb3
-* server (from wildfly core)
+# Build logging-tools
+
+(we have a one liner fix to apply)
+
+Build it from `https://github.com/jfdenise/jboss-logging-tools/tree/provisiong_logging`
 
 # Build the generator
 

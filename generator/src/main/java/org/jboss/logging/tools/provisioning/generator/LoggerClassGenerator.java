@@ -17,13 +17,11 @@ import org.jboss.logging.processor.generator.model.ClassModelFactory;
 import org.jboss.logging.processor.model.MessageInterface;
 import org.jboss.logging.processor.model.MessageMethod;
 import org.jboss.logging.tools.provisioning.descriptor.InterfaceDescriptor;
-import org.jboss.logging.tools.provisioning.descriptor.MethodDescriptor;
 import org.jboss.logging.tools.provisioning.descriptor.TranslationFileDescriptor;
 import org.jboss.logging.tools.provisioning.scanner.JarScanner;
 
 import com.sun.source.util.JavacTask;
 
-import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
@@ -32,7 +30,6 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.stream.Collectors;
 
 /**
  * Main entry point for provisioning-time logger class generation.
@@ -84,7 +81,7 @@ public class LoggerClassGenerator {
     /**
      * Runs the full generation pipeline.
      *
-     * <p>The running JAR (fat JAR) is automatically added to the javac compilation
+     * <p>The running JAR (when shaded) is automatically added to the javac compilation
      * classpath, so all bundled dependencies ({@code jboss-logging-annotations},
      * {@code jboss-logging}, etc.) are available to the compiler without any extra
      * parameters.</p>
@@ -126,7 +123,7 @@ public class LoggerClassGenerator {
             synthesizeMissingParents(descriptor);
         }
 
-        // ── Phase 0 / Phase 2 setup: JavacTask for type resolution ────────
+        // ── Phase 2 setup: JavacTask for type resolution ──────────────────
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
             throw new IllegalStateException(
@@ -146,16 +143,22 @@ public class LoggerClassGenerator {
         lastSourceDir = tempSourceDir;
         System.out.println("[INFO]  Source directory: " + tempSourceDir.toAbsolutePath());
 
-        // Build the full classpath:
+        // Build the classpath for javac:
         //   • the source JARs being scanned (needed to resolve their own types)
         //   • extra (non-scanned) JARs for transitive dependencies
-        //   • the running JAR itself — because when shaded, it contains
-        //     jboss-logging-annotations, jboss-logging, and jdeparser classes
-        //     that javac needs to compile the generated sources.
+        //   • the running JAR itself — when shaded it contains jboss-logging-annotations,
+        //     jboss-logging, and jdeparser; when running from an exploded classes/ directory
+        //     (IDE / unit tests) selfJar() returns empty and those JARs are already on the
+        //     JVM classpath so javac can find them via jarForClass() fallbacks.
         List<java.io.File> classpathFiles = new ArrayList<>();
         for (Path jar : sourceJars) classpathFiles.add(jar.toFile());
         for (Path jar : extraClasspath) classpathFiles.add(jar.toFile());
         selfJar().ifPresent(classpathFiles::add);
+        // Fallback for non-fat-JAR contexts: locate dependency JARs from the live classloader.
+        if (selfJar().isEmpty()) {
+            jarForClass(org.jboss.logging.annotations.Param.class).ifPresent(classpathFiles::add);
+            jarForClass(org.jboss.logging.BasicLogger.class).ifPresent(classpathFiles::add);
+        }
 
         // Determine the --release from the highest class-file major version seen
         int maxMajor = descriptors.stream()
@@ -217,9 +220,43 @@ public class LoggerClassGenerator {
         List<Path> compileClasspath = new ArrayList<>(sourceJars);
         compileClasspath.addAll(extraClasspath);
         selfJar().map(java.io.File::toPath).ifPresent(compileClasspath::add);
+        if (selfJar().isEmpty()) {
+            jarForClass(org.jboss.logging.annotations.Param.class)
+                    .map(java.io.File::toPath).ifPresent(compileClasspath::add);
+            jarForClass(org.jboss.logging.BasicLogger.class)
+                    .map(java.io.File::toPath).ifPresent(compileClasspath::add);
+        }
 
         new SystemJavacCompiler().compile(
                 tempSourceDir, classOutputDir, compileClasspath, releaseVersion, keepSources);
+    }
+
+    /**
+     * Locates the JAR file from which the given class was loaded.
+     *
+     * <p>Used as a fallback when {@link #selfJar()} returns empty (i.e. when running from an
+     * exploded class directory rather than a shaded fat JAR).  By passing a sentinel class from
+     * each required dependency (e.g. {@code Param.class} from {@code jboss-logging-annotations},
+     * {@code BasicLogger.class} from {@code jboss-logging}) we can put those JARs on javac's
+     * {@code CLASS_PATH} so that annotation mirrors on classpath types are fully resolvable.</p>
+     *
+     * @param clazz any class whose containing JAR should be located
+     * @return the JAR file, or empty if the class is not loaded from a JAR
+     */
+    private static java.util.Optional<java.io.File> jarForClass(Class<?> clazz) {
+        try {
+            java.security.CodeSource cs = clazz.getProtectionDomain().getCodeSource();
+            if (cs == null) return java.util.Optional.empty();
+            java.net.URL location = cs.getLocation();
+            if (location == null) return java.util.Optional.empty();
+            java.io.File f = new java.io.File(location.toURI());
+            if (f.isFile() && f.getName().endsWith(".jar")) {
+                return java.util.Optional.of(f);
+            }
+            return java.util.Optional.empty();
+        } catch (Exception e) {
+            return java.util.Optional.empty();
+        }
     }
 
     /**
@@ -274,7 +311,7 @@ public class LoggerClassGenerator {
             byLocale.put(tfd.localeSuffix, tfd);
         }
 
-        // Iterate in a stable order; collect insertions so we don't mutate while iterating
+        // Iterate in a stable order; collect insertions so we don't mutate while iterating.
         // Use a snapshot of current suffixes to drive the loop — new entries added will be
         // processed in the next pass.
         boolean changed = true;
@@ -290,7 +327,7 @@ public class LoggerClassGenerator {
                 // Synthesize an empty parent.
                 // Parent locale string: strip leading '_' from parentSuffix
                 String parentLocale = parentSuffix.substring(1);
-                // Parent's parent class name
+                // Determine the parent's superclass name
                 String baseImplClass = descriptor.qualifiedName + "_$"
                         + (descriptor.kind == org.jboss.logging.tools.provisioning.descriptor.InterfaceKind.LOGGER
                                 ? "logger" : "bundle");
@@ -308,8 +345,7 @@ public class LoggerClassGenerator {
                         parentParentClass,
                         Collections.emptyMap());
 
-                // Insert the new entry into the map, positioned before the child that needs it.
-                // Re-build the map with the parent inserted at the right position.
+                // Re-build the map with the parent inserted immediately before the child.
                 LinkedHashMap<String, TranslationFileDescriptor> reordered = new LinkedHashMap<>();
                 for (Map.Entry<String, TranslationFileDescriptor> e : byLocale.entrySet()) {
                     if (e.getKey().equals(suffix)) {
@@ -346,8 +382,8 @@ public class LoggerClassGenerator {
      * </ul>
      */
     private static String parentLocaleSuffix(String localeSuffix) {
-        // localeSuffix is like "_pt_BR": starts with '_', may have more '_' inside.
-        // Count underscores: "_fr" has 1, "_pt_BR" has 2, "_en_US_POSIX" has 3.
+        // localeSuffix starts with '_'; count segments by counting underscores.
+        // "_fr" has 1 underscore → language-only, no parent.
         int firstUnderscore = localeSuffix.indexOf('_');                  // always 0
         int lastUnderscore  = localeSuffix.lastIndexOf('_');
         if (firstUnderscore == lastUnderscore) return null; // language-only, no parent

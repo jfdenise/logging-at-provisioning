@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+
+<package-spec xmlns="urn:jboss:galleon:package:2.0" name="org.wildfly.translations.jpa-hibernate6">
+      <!--<dependencies>
+        <package name="org.hibernate.jipijapa-hibernate6"/>
+    </dependencies>-->
+</package-spec>

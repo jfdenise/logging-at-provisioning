@@ -54,7 +54,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-ee-galleon-pack</artifactId>
+                <artifactId>wildfly-galleon-pack</artifactId>
                 <version>${version.org.wildfly}</version>
                 <type>zip</type>
                 <exclusions>
@@ -91,8 +91,7 @@
     </developers>
     <modules>
         <module>common</module>
+        <module>translations</module>
         <module>galleon-pack</module>
-        <module>ejb3-translations</module>
-        <module>server-translations</module>
     </modules>
 </project>

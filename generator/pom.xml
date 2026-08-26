@@ -14,7 +14,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>11</maven.compiler.release>
-        <version.jboss-logging-tools>3.0.4.Final</version.jboss-logging-tools>
+        <version.jboss-logging-tools>3.0.5.Final-SNAPSHOT</version.jboss-logging-tools>
         <version.jboss-logging>3.6.1.Final</version.jboss-logging>
         <version.jboss-logmanager>3.1.2.Final</version.jboss-logmanager>
         <version.jdeparser>2.0.3.Final</version.jdeparser>

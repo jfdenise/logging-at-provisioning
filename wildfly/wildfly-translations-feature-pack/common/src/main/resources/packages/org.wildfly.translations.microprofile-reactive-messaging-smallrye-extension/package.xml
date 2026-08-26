@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+
+<package-spec xmlns="urn:jboss:galleon:package:2.0" name="org.wildfly.translations.microprofile-reactive-messaging-smallrye-extension">
+      <dependencies>
+        <package name="org.wildfly.extension.microprofile.reactive-messaging-smallrye"/>
+    </dependencies>
+</package-spec>

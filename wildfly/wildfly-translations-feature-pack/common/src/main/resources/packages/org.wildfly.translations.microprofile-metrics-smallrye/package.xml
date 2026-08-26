@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+
+<package-spec xmlns="urn:jboss:galleon:package:2.0" name="org.wildfly.translations.microprofile-metrics-smallrye">
+      <dependencies>
+        <package name="org.wildfly.extension.microprofile.metrics-smallrye"/>
+    </dependencies>
+</package-spec>
