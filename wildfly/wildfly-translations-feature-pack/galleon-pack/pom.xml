@@ -97,10 +97,11 @@
                         <configuration>
                             <record-provisioning-state>true</record-provisioning-state>
                             <overwrite-provisioned-server>true</overwrite-provisioned-server>
+                            <log-provisioning-time>true</log-provisioning-time>
                             <feature-packs>
                                 <feature-pack>
                                     <groupId>org.wildfly</groupId>
-                                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                                    <artifactId>wildfly-galleon-pack</artifactId>
                                     <version>${version.org.wildfly}</version>
                                 </feature-pack>
                                 <feature-pack>

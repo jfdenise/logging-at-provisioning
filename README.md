@@ -1,6 +1,19 @@
 # Logging src generation and compilation at provisioning time
 
-## Systematic differences between build-time and provisioning-time generated source
+Attempt to move build time src generation and class compilation at provisioning time.
+Covered all 8.1 translations. We have reached an identical support at provisioning time, diffs are expected.
+One identified issue is the impact on provisioning time.
+
+# Numbers
+
+* Number of generated source files and compiled classes: 722
+* Number of localized modules: 90 modules
+* Impact on provisioning time: 40 seconds
+* Generation per module: around 400 to 500 ms 
+
+NOTE: Currently looking if we can concurrently generate the logging content.
+
+# Systematic differences between build-time and provisioning-time generated source
 
 When comparing the build-time generated sources (from `wildfly/expected-source-files`) with the
 provisioning-time generated sources (from `wildfly/generated-source-files`), four systematic
@@ -13,7 +26,7 @@ reported there (bound guard in generation, method not existing, ...).
 
 ---
 
-### 1. Parameter names replaced by `arg0`, `arg1`, …
+## 1. Parameter names replaced by `arg0`, `arg1`, …
 
 Build-time preserves the original parameter names declared in the source interface because the
 annotation processor runs against the `.java` source. Provisioning-time operates against compiled
@@ -48,7 +61,7 @@ public final DeploymentUnitProcessingException failedToParseXml(
 
 ---
 
-### 2. `$str()` method override ordering differs in locale files
+## 2. `$str()` method override ordering differs in locale files
 
 In locale-specific files (`_$logger_fr.java`, `_$logger_de.java`, etc.) the `protected String $str()`
 override methods appear in a different order. Build-time orders them as they are declared in the
@@ -71,9 +84,10 @@ protected String failedToParseXml3$str()     { return "WFLYAC0016: ..."; }
 protected String malformedUrl$str()          { return "WFLYAC0017: ..."; }
 ```
 
+# Impact on provisioning time
 
-Attempt to move build time src generation and class compilation at provisioning time.
-Covered all 8.1 translations.
+Adds 45 seconds to the provisioning.
+Each generation + compilation takes around 500ms.
 
 # Build logging-tools
 
