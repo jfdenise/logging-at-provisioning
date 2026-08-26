@@ -1,0 +1,26 @@
+package org.wildfly.extension.clustering.singleton;
+
+import java.util.Locale;
+import java.io.Serializable;
+import javax.annotation.processing.Generated;
+import org.jboss.logging.BasicLogger;
+
+/**
+ * Warning this class consists of generated code.
+ */
+@Generated(value = "org.jboss.logging.processor.generator.model.MessageLoggerTranslator", date = "2026-07-31T11:56:53+0200")
+public class SingletonLogger_$logger_de extends SingletonLogger_$logger implements SingletonLogger, BasicLogger, Serializable {
+    private static final long serialVersionUID = 1L;
+    public SingletonLogger_$logger_de(final org.jboss.logging.Logger logger) {
+        super(logger);
+    }
+    private static final Locale LOCALE = Locale.GERMAN;
+    @Override
+    protected Locale getLoggingLocale() {
+        return LOCALE;
+    }
+    @Override
+    protected String singletonDeploymentDetected$str() {
+        return "WFLYCLSNG0001: Singleton-Deployment entdeckt. Deployment wird mit Richtlinie %1$s zurückgesetzt.";
+    }
+}

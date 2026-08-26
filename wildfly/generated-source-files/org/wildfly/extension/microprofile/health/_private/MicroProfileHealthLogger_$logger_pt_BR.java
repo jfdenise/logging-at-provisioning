@@ -1,0 +1,34 @@
+package org.wildfly.extension.microprofile.health._private;
+
+import java.util.Locale;
+import java.io.Serializable;
+import javax.annotation.processing.Generated;
+import org.jboss.logging.BasicLogger;
+
+/**
+ * Warning this class consists of generated code.
+ */
+@Generated(value = "org.jboss.logging.processor.generator.model.MessageLoggerTranslator", date = "2026-08-26T14:41:33+0200")
+public class MicroProfileHealthLogger_$logger_pt_BR extends MicroProfileHealthLogger_$logger_pt implements MicroProfileHealthLogger, BasicLogger, Serializable {
+    private static final long serialVersionUID = 1L;
+    public MicroProfileHealthLogger_$logger_pt_BR(final org.jboss.logging.Logger logger) {
+        super(logger);
+    }
+    private static final Locale LOCALE = new Locale("pt", "BR");
+    @Override
+    protected Locale getLoggingLocale() {
+        return LOCALE;
+    }
+    @Override
+    protected String activatingSubsystem$str() {
+        return "WFLYMPHEALTH0001: Ativando o subsistema MicroProfile Health";
+    }
+    @Override
+    protected String deploymentRequiresCapability$str() {
+        return "WFLYMPHEALTH0002: A implantação %1$s requer o uso da funcionalidade '%2$s', mas esta não está registada no momento";
+    }
+    @Override
+    protected String healthDownStatus$str() {
+        return "WFLYMPHEALTH0003: Relatando o status de integridade comprometida: %1$s";
+    }
+}

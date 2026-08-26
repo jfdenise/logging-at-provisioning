@@ -201,7 +201,7 @@ public class LoggerClassGenerator {
                 // MessageInterfaceFactory.of() requires the full ProcessingEnvironment
                 // and builds a fully real MessageInterface from the live TypeElement.
                 MessageInterface mi = MessageInterfaceFactory.of(
-                        processingEnv, te, new Properties(), /* addGeneratedAnnotation */ false);
+                        processingEnv, te, new Properties(), /* addGeneratedAnnotation */ true);
 
                 // Implementation class
                 ClassModelFactory.implementation(processingEnv, mi).generateAndWrite();

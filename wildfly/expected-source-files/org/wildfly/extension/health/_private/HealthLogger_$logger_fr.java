@@ -1,0 +1,26 @@
+package org.wildfly.extension.health._private;
+
+import java.util.Locale;
+import java.io.Serializable;
+import javax.annotation.processing.Generated;
+import org.jboss.logging.BasicLogger;
+
+/**
+ * Warning this class consists of generated code.
+ */
+@Generated(value = "org.jboss.logging.processor.generator.model.MessageLoggerTranslator", date = "2026-07-31T11:57:42+0200")
+public class HealthLogger_$logger_fr extends HealthLogger_$logger implements HealthLogger, BasicLogger, Serializable {
+    private static final long serialVersionUID = 1L;
+    public HealthLogger_$logger_fr(final org.jboss.logging.Logger logger) {
+        super(logger);
+    }
+    private static final Locale LOCALE = Locale.FRENCH;
+    @Override
+    protected Locale getLoggingLocale() {
+        return LOCALE;
+    }
+    @Override
+    protected String activatingSubsystem$str() {
+        return "WFLYHEALTH0001: Activation du sous-système Health de base";
+    }
+}
