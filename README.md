@@ -4,6 +4,59 @@ Attempt to move build time src generation and class compilation at provisioning 
 Covered all 8.1 translations. We have reached an identical support at provisioning time, diffs are expected.
 One identified issue is the impact on provisioning time.
 
+# Approach
+
+## A library to generate and compile logging classes
+
+The [generator](./generator) library is a thin layer on top `org.jboss.logging:jboss-logging-tools` annotation processor to allow for:
+
+* Scanning compiled classes for Logging annotations
+* Generate source files
+* Compile classes
+
+## Package translated files (_i18n_*.properties files)
+
+For each artifact in JBoss Modules modules that requires translations, 
+a maven artifact is defined. It contains the properties files that will need to be processed 
+at provisioning time to generate the classes.
+
+### Example of such artifacts:
+
+[org.wildfly.translations:wildfly-ejb3-translations:1.0.0.Final](wildfly/wildfly-translations-feature-pack/translations/ejb3-translations/)
+[org.wildfly.translations:wildfly-server-translations:1.0.0.Final](wildfly/wildfly-translations-feature-pack/translations/server-translations/)
+
+## Evolve Galleon plugins with logging generation capabilities
+
+WildFly Galleon plugins depend on the generator library.
+A new task `generate-logging` is defined to generate the classes and add them to the target JBoss Modules module.
+
+Example of task:
+
+```
+<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:3.3">
+    <generate-logging artifact="org.wildfly.translations:wildfly-ejb3-translations" to-location="modules/system/layers/base/org/jboss/as/ejb3/main/" >
+    </generate-logging>
+</tasks>
+```
+
+A `translations` resource directory is created in the module, it contains the produced class files :
+
+```
+<resources>
+   <resource-root path="wildfly-ejb3-42.0.0.Beta1-SNAPSHOT.jar"/>
+   <resource-root path="timers"/>
+   <resource-root path="translations"/>
+</resources>
+```
+
+## Introduce a new feature-pack that contains translations
+
+The feature-pack `org.wildfly.translations:wildfly-translations-feature-pack` contains 
+the tasks and packages for all subsystems to translate.
+
+This feature-pack has to be provisioned with WildFly feature-pack to include the translations.
+
+
 # Numbers
 
 * Number of generated source files and compiled classes: 722
