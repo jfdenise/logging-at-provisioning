@@ -22,8 +22,8 @@ at provisioning time to generate the classes.
 
 ### Example of such artifacts:
 
-[org.wildfly.translations:wildfly-ejb3-translations:1.0.0.Final](wildfly/wildfly-translations-feature-pack/translations/ejb3-translations/)
-[org.wildfly.translations:wildfly-server-translations:1.0.0.Final](wildfly/wildfly-translations-feature-pack/translations/server-translations/)
+* [org.wildfly.translations:wildfly-ejb3-translations:1.0.0.Final](wildfly/wildfly-translations-feature-pack/translations/ejb3-translations/)
+* [org.wildfly.translations:wildfly-server-translations:1.0.0.Final](wildfly/wildfly-translations-feature-pack/translations/server-translations/)
 
 ## Evolve Galleon plugins with logging generation capabilities
 
