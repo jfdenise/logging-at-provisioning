@@ -1,8 +1,7 @@
 # Logging src generation and compilation at provisioning time
 
 Attempt to move build time src generation and class compilation at provisioning time.
-Covered all 8.1 translations. We have reached an identical support at provisioning time, diffs are expected.
-One identified issue is the impact on provisioning time.
+Covered all 8.1 translations. We have reached an identical support at provisioning time, the observed diffs are expected.
 
 # Approach
 
@@ -49,6 +48,15 @@ A `translations` resource directory is created in the module, it contains the pr
 </resources>
 ```
 
+### Technical details 
+
+* The classpath used to resolve the symbols at java source code generation and compilation is the complete set of Jar files 
+present in the server installation modules (jboss modules jar file). Otherwise some symbols are not found (due to the way JBoss Modules 
+classloading operates at runtime).
+* All generation share the same classpath, this allow for Javac Compilation task sharing. A thread is started per generation task.
+* Only part of the logic needs to be synchronized.
+* This design offers the fastest generation (around 4 to 5secs added to the provisioning time, vs 40 secs in sequence).
+
 ## Introduce a new feature-pack that contains translations
 
 The feature-pack `org.wildfly.translations:wildfly-translations-feature-pack` contains 
@@ -59,12 +67,9 @@ This feature-pack has to be provisioned with WildFly feature-pack to include the
 
 # Numbers
 
-* Number of generated source files and compiled classes: 722
+* Number of generated source files to compile: 722
 * Number of localized modules: 90 modules
-* Impact on provisioning time: 40 seconds
-* Generation per module: around 400 to 500 ms 
-
-NOTE: Currently looking if we can concurrently generate the logging content.
+* Impact on provisioning time: 4/5 seconds
 
 # Systematic differences between build-time and provisioning-time generated source
 
@@ -136,11 +141,6 @@ protected String cannotFindAppClientFile$str() { return "WFLYAC0023: ..."; }
 protected String failedToParseXml3$str()     { return "WFLYAC0016: ..."; }
 protected String malformedUrl$str()          { return "WFLYAC0017: ..."; }
 ```
-
-# Impact on provisioning time
-
-Adds 45 seconds to the provisioning.
-Each generation + compilation takes around 500ms.
 
 # Build logging-tools
 
